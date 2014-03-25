@@ -35,11 +35,11 @@ app.get('/', restrict, function(req, res) {
   res.render('index');
 });
 
-app.get('/create', function(req, res) {
+app.get('/create', restrict, function(req, res) {
   res.render('index');
 });
 
-app.get('/links', function(req, res) {
+app.get('/links', restrict, function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
@@ -131,6 +131,12 @@ app.post('/signup', function(req, res) {
       });
     }
   });
+});
+
+app.post('/logout', function(req, res) {
+  console.log('trying to logout shortly.js');
+  req.session.destroy();
+  res.redirect('/login');
 });
 
 /************************************************************/
