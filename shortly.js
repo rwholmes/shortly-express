@@ -1,6 +1,7 @@
 var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
+var bcrypt = require('bcrypt');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -11,7 +12,7 @@ var Click = require('./app/models/click');
 
 var app = express();
 
-app.use(express.cookieParser('pfffffffffff, very secret'));
+app.use(express.cookieParser('wow, such crypto'));
 app.use(express.session());
 
 var restrict = function(req, res, next) {
@@ -90,9 +91,11 @@ app.post('/login', function(req, res) {
   console.log('inside post login***********************');
   var username = req.body.username;
   var password = req.body.password;
+  // var salt = bcrypt.genSaltSync(10);
+  // var hash = bcrypt.hashSync(password, salt);
 
-  new User({ username: username, password: password }).fetch().then(function(found) {
-    if (found) {
+  new User({ username: username}).fetch().then(function(found) {
+    if (found && bcrypt.compareSync(password, found.get('password'))) {
       console.log('Logged in! - shortly.js 90');
       req.session.regenerate(function() {
         req.session.user = username;
@@ -114,15 +117,17 @@ app.post('/signup', function(req, res) {
   console.log('inside post signup***********************');
   var username = req.body.username;
   var password = req.body.password;
+  var salt = bcrypt.genSaltSync(10);
+  var hash = bcrypt.hashSync(password, salt);
 
-  new User({ username: username, password: password }).fetch().then(function(found) {
+  new User({ username: username, password: hash }).fetch().then(function(found) {
     if (found) {
       console.log('Username exists! - shortly.js 90');
       res.redirect('/signup');
     } else {
       var user = new User({
         username: username,
-        password: password
+        password: hash
       });
 
       user.save().then(function(newUser) {
