@@ -11,6 +11,18 @@ var Click = require('./app/models/click');
 
 var app = express();
 
+app.use(express.cookieParser('pfffffffffff, very secret'));
+app.use(express.session());
+
+var restrict = function(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied! Love Jon & Rob';
+    res.redirect('/login');
+  }
+};
+
 app.configure(function() {
   app.set('views', __dirname + '/views');
   app.set('view engine', 'ejs');
@@ -19,14 +31,11 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
-console.log('here');
-
-app.get('/', function(req, res) {
+app.get('/', restrict, function(req, res) {
   res.render('index');
 });
 
 app.get('/create', function(req, res) {
-
   res.render('index');
 });
 
@@ -85,9 +94,12 @@ app.post('/login', function(req, res) {
   new User({ username: username, password: password }).fetch().then(function(found) {
     if (found) {
       console.log('Logged in! - shortly.js 90');
-      res.render('index');
+      req.session.regenerate(function() {
+        req.session.user = username;
+        res.redirect('/index');
+      });
     } else {
-      res.render('login');
+      res.redirect('/login');
     }
   });
 });
@@ -106,7 +118,7 @@ app.post('/signup', function(req, res) {
   new User({ username: username, password: password }).fetch().then(function(found) {
     if (found) {
       console.log('Username exists! - shortly.js 90');
-      res.render('signup');
+      res.redirect('/signup');
     } else {
       var user = new User({
         username: username,
@@ -115,7 +127,7 @@ app.post('/signup', function(req, res) {
 
       user.save().then(function(newUser) {
         Users.add(newUser);
-        res.send(200, newUser);
+        res.redirect('/index');
       });
     }
   });
@@ -150,4 +162,4 @@ app.get('/*', function(req, res) {
 });
 
 console.log('Shortly is listening on 4568');
-app.listen(3000);
+app.listen(4568);
